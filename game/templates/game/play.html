@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h1>Players</h1>
+  <ul id="player-list">
+    {% for player in game.players.all %}
+      <li>{{ player.username }}</li>
+    {% endfor %}
+  </ul>
+  {% if not game.started %}
+  <form method="post" action="{% url 'game:start' game.join_code %}">
+    {% csrf_token %}
+    <button type="submit" class="action-button">Start game</button>
+  </form>
+  {% else %}
+  <h1>hands</h1>
+    <ul>
+        {% for hand in game.hands.all %}
+        <li>{{ hand }}
+            <ul>
+                {% for card in hand.cards.all %}
+                    {% if not card.hidden %}
+                        <li>{{ card }}</li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </li>
+        {% endfor %}
+
+    </ul>
+    {% if user_turn %}
+    {% if user_turn.username == request.user.username %}
+    <h2>Your turn</h2>
+    <form method="post" action="{% url 'game:hit' game.join_code %}" onsubmit="return submitHandler()">
+      {% csrf_token %}
+      <button type="submit" class="action-button">Hit</button>
+    </form>
+    <form method="post" action="{% url 'game:stand' game.join_code %}" onsubmit="return submitHandler()">
+      {% csrf_token %}
+      <button type="submit" class="action-button">Stand</button>
+    </form>
+    {% else %}
+      <h2>{{ user_turn }}'s turn</h2>
+    {% endif %}
+    {% endif %}
+    
+  {% endif %}
+{% endblock %}
+
+
+{% block extrajs %}
+
+<script>
+  let actionButtons = document.querySelectorAll('.action-button');
+  const joinCode = '{{ game.join_code }}'
+
+  const chatSocket = new WebSocket(
+      'ws://'
+      + window.location.host
+      + '/ws/game/'
+      + joinCode
+      + '/'
+  );
+
+  chatSocket.onopen = function(event) {
+    const message = {
+      type: 'player_joined',
+      player_name: '{{ request.user.username }}'
+    };
+    chatSocket.send(JSON.stringify(message));
+  };
+
+  /*actionButtons.forEach(function(button) {
+    button.addEventListener('click', function(e) {
+      const message = {
+        type: 'action',
+        action: button.innerText.toLowerCase()
+      };
+      chatSocket.send(JSON.stringify(message));
+    });
+  });*/
+
+  chatSocket.onmessage = function(e) {
+    const data = JSON.parse(e.data);
+    console.log(e)
+    if (data.type === 'players_list') {
+      const playerList = document.getElementById('player-list');
+      playerList.innerHTML = '';
+      data.players.forEach(function(player) {
+        const li = document.createElement('li');
+        li.innerText = player;
+        playerList.appendChild(li);
+      });
+    } else if (data.type === 'action') {
+      console.log(data);
+    } else {
+      console.log(data);
+    }
+  };
+  chatSocket.onclose = function(e) {
+      console.error('Chat socket closed unexpectedly');
+  };
+
+  chatSocket.onerror = function(event) {
+    console.error('WebSocket error:', event.message);
+  };
+
+</script>
+  
+
+{% endblock %}

@@ -1,0 +1,24 @@
+/* Set the font size of labels to 18px */
+label {
+  font-size: 18px;
+}
+
+/* Increase the width of the input fields to 100% */
+input[type="text"],
+input[type="password"],
+input[type="email"] {
+  width: 100%;
+}
+
+/* Add some margin between form elements */
+form > * {
+  margin-bottom: 10px;
+}
+
+/* Change the background color of the submit button to green */
+button[type="submit"] {
+  background-color: green;
+  color: white;
+}
+/* josephdsmithjr
+I=jds2cai */
